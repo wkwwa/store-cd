@@ -1,0 +1,11 @@
+---
+groups:
+  - name: momo store rules
+    rules:
+    - alert: InstanceDown
+      expr: up{instance="momo-backend:8081"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        project: "momo_store"
+        component: "Backend"

@@ -1,0 +1,34 @@
+stages:
+#  - deploy-cluster
+  - deploy-momo-helm-chart
+  - deploy-prometheus-grafana-chart
+
+#deploy-k8s-cluster:
+#  stage: deploy-cluster
+#  trigger:
+#    include:
+#      - "/terraform/.gitlab-ci.yml"
+#    strategy: depend
+#  only:
+#    changes: 
+#      - terraform/**/*
+
+deploy-momo-store-chart:
+  stage: deploy-momo-helm-chart
+  trigger:
+    include:
+      - "momo-store-chart/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:
+      - momo-store-chart/**/*
+
+deploy-prometheus-grafana-chart:
+  stage: deploy-prometheus-grafana-chart
+  trigger:
+    include:
+      - "monitoring-tools/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:
+      - monitoring-tools/**/*

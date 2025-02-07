@@ -1,0 +1,102 @@
+global:
+  dockerConfigSecret:
+    dockerconfigjson: ${dockerconfigjson}
+
+backend:
+  replicaCount: 1
+  image:
+    repository: registry.gitlab.com/devops3761117/momo-store/momo-backend
+    pullPolicy: IfNotPresent
+    tag: "1.0.1775383"
+
+  imagePullSecrets:
+    - name: docker-config-secret
+  nameOverride: "momo-backend"
+  fullnameOverride: "momo-backend"
+
+  podAnnotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8081"
+    prometheus.io/scrape: "true"
+
+  service:
+    type: ClusterIP
+    port: 8081
+
+  strategy:
+    type: Recreate
+
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 8081
+    initialDelaySeconds: 15
+    periodSeconds: 30
+    timeoutSeconds: 1
+    failureThreshold: 6
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: registry.gitlab.com/devops3761117/momo-store/momo-frontend
+    pullPolicy: IfNotPresent
+    tag: "1.1.1775382"
+
+  imagePullSecrets:
+    - name: docker-config-secret
+
+  nameOverride: "momo-frontend"
+  fullnameOverride: "momo-frontend"
+
+  service:
+    type: LoadBalancer
+    port: 80
+
+  configMap:
+    metadata:
+      name: nginx-conf
+    data:
+      default.conf: |
+        server {
+          listen 80;
+          server_name _;
+          location /api {
+            proxy_pass http://momo-backend:8081;
+          }
+          location / {
+            root /app/frontend/dist/momo-store;
+            index index.html;
+            try_files $uri $uri/ /index.html;
+          }
+        }
+  strategy:
+    type: Recreate
+
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 8081
+    initialDelaySeconds: 15
+    periodSeconds: 30
+    timeoutSeconds: 1
+    failureThreshold: 6
+
+  volumes:
+    - name: nginx-conf
+      configMap:
+        name: nginx-conf
+        items:
+          - key: default.conf
+            path: default.conf
+
+  volumeMounts:
+    - name: nginx-conf
+      mountPath: "/etc/nginx/conf.d/default.conf"
+      subPath: default.conf
+      readOnly: true

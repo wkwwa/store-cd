@@ -1,0 +1,30 @@
+stages:
+  - deploy
+
+deploy-prometheus-chart:
+  stage: deploy
+  image: alpine/helm:3
+  environment:
+    name: test
+  script:
+    - mkdir -p ~/.kube
+    - KUBECONFIG=${CONFIG}
+    - echo $CONFIG | base64 -d > ~/.kube/config 
+    - chmod 600 ~/.kube/config
+    - cd monitoring-tools
+    - helm upgrade --install prometheus --namespace default prometheus
+    - rm -f ~/.kube/config
+
+deploy-grafana-chart:
+  stage: deploy
+  image: alpine/helm:3
+  environment:
+    name: test
+  script:
+    - mkdir -p ~/.kube
+    - KUBECONFIG=${CONFIG}
+    - echo $CONFIG | base64 -d > ~/.kube/config 
+    - chmod 600 ~/.kube/config
+    - cd monitoring-tools
+    - helm upgrade --install grafana --namespace default grafana
+    - rm -f ~/.kube/config
